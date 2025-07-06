@@ -1,0 +1,46 @@
+{
+  "name": "aladdin-frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start:dev": "webpack --mode development",
+    "start:prod": "webpack --mode production",
+    "start:serve": "webpack serve --mode development",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@swc/core": "^1.12.9",
+    "@swc/helpers": "^0.5.17",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/yargs-parser": "^21.0.3",
+    "autoprefixer": "10.4.21",
+    "clean-webpack-plugin": "^4.0.0",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "mini-css-extract-plugin": "^2.9.2",
+    "postcss": "8.5.6",
+    "postcss-loader": "^8.1.1",
+    "style-loader": "^4.0.0",
+    "swc-loader": "^0.2.6",
+    "tailwindcss": "3.4.0",
+    "themed-progress-plugin": "^1.0.1",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2",
+    "webpack-merge": "^6.0.1",
+    "yargs-parser": "^20.2.9"
+  },
+  "dependencies": {
+    "immer": "^10.1.1",
+    "lucide-react": "^0.525.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.3"
+  }
+}
