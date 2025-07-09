@@ -37,6 +37,8 @@
     "yargs-parser": "^20.2.9"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.0.0",
+    "antd": "^5.26.4",
     "immer": "^10.1.1",
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",

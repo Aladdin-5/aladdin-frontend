@@ -6,7 +6,7 @@ const MainLayout = () => {
   return (
     <>
       <Header />
-      <main className="mx-auto px-4">
+      <main className="">
         <Outlet />
       </main>
     </>
