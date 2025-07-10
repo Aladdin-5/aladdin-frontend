@@ -18,6 +18,7 @@ const mainRoutes = {
   element: <Layout />,
   children: [
     { path: "*", element: <AgentPage /> },
+    { path: "/", element: <AgentPage /> },
     { path: "/agent", 
       children: [
         { path: "", element: <AgentPage /> },
@@ -35,7 +36,6 @@ const mainRoutes = {
     { path: "/dashboard", element: <DashboardPage /> },
     { path: "/bills", element: <BillsPage /> },
     { path: "/dao", element: <DAOPage /> },
-
     { path: "404", element: <PageNotFoundView /> },
   ],
 };
