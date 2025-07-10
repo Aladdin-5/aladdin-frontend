@@ -2,19 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Upload, Star, User, Code, Palette, Settings } from 'lucide-react';
 import AgentDetailModal from './agentDetailModal';
+import { Agent,AgentDetailModalProps } from '@/types/agents/index';
 
-interface Agent {
-  id: number;
-  name: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  description: string;
-  tags: string[];
-  features: string[];
-  avatar: string;
-  isFree: boolean;
-}
 
 const AgentPage = () => {
   const [searchTerm, setSearchTerm] = useState('');

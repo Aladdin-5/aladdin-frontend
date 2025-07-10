@@ -1,23 +1,8 @@
 import React from 'react';
 import { X, Star } from 'lucide-react';
+import { Agent,AgentDetailModalProps } from '@/types/agents/index';
 
-interface Agent {
-  id: number;
-  name: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  description: string;
-  tags: string[];
-  features: string[];
-  avatar: string;
-  isFree: boolean;
-}
 
-interface AgentDetailModalProps {
-  agent: Agent | null;
-  onClose: () => void;
-}
 
 const AgentDetailModal: React.FC<AgentDetailModalProps> = ({ agent, onClose }) => {
   if (!agent) return null;
