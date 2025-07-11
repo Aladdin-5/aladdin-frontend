@@ -14,15 +14,17 @@ import {
     message
 } from 'antd';
 import { ArrowLeftOutlined, QuestionCircleOutlined, PlusOutlined, CloseOutlined } from '@ant-design/icons';
-
+import agentApi from '@/api/agentApi'
 const { Title, Paragraph, Text } = Typography;
+import { useNavigate} from 'react-router-dom';
 const { TextArea } = Input;
 const { Option } = Select;
 
-import { FormData } from '@/types/agents/index';
+import { AgentFormData } from '@/types/agents/index';
 
 const AgentCreatePage: React.FC = () => {
-    const [form] = Form.useForm<FormData>();
+    const navigate = useNavigate();
+    const [form] = Form.useForm<AgentFormData>();
     const [loading, setLoading] = useState<boolean>(false);
     const [inputTagValue, setInputTagValue] = useState<string>('');
     const [tags, setTags] = useState<string[]>([]);
@@ -51,12 +53,28 @@ const AgentCreatePage: React.FC = () => {
         }
     };
 
-    const handleSubmit = async (values: FormData): Promise<void> => {
+    const handleSubmit = async (values: AgentFormData): Promise<void> => {
         setLoading(true);
         try {
-            console.log('Form submitted:', values);
-            // Here you would handle the form submission
-            // await deployAgent(values);
+            const submitData = {
+                agentName: values.agentName,
+                agentAddress: values.agentAddress,
+                description: values.description,
+                authorBio: values.authorBio, 
+                agentClassification: values.agentClassification,
+                tags: values.tags || [],
+                walletAddress: values.walletAddress,
+                autoAcceptJobs: Boolean(values.autoAcceptJobs),
+                // 新增必填字段
+                // isPrivate: !values.isFree, // 将 isFree 转换为 isPrivate（免费=非私有）
+                // contractType: 'result', // 默认值
+                // isActive: true // 默认激活
+            };
+            await agentApi.addAgent(submitData)
+            console.log('Form submitted:', submitData);
+            //重置清空
+            handleReset()
+            navigate('/agent')
         } catch (error) {
             console.error('Error deploying agent:', error);
         } finally {
@@ -259,9 +277,25 @@ const AgentCreatePage: React.FC = () => {
                             />
                         </Form.Item>
 
+                        {/* 钱包地址 */}
+                        <Form.Item
+                            name="walletAddress"
+                            label={
+                                <Space>
+                                    Wallet Address
+                                    <Tooltip title="Enter a unique name for your agent">
+                                        <QuestionCircleOutlined />
+                                    </Tooltip>
+                                </Space>
+                            }
+                            rules={[{ required: true, message: 'Please enter wallet address' }]}
+                        >
+                            <Input placeholder="Enter Wallet Address" size="large" />
+                        </Form.Item>
+
                         {/* Brief Description */}
                         <Form.Item
-                            name="briefDescription"
+                            name="description"
                             label={
                                 <Space>
                                     Brief Description
@@ -291,6 +325,7 @@ const AgentCreatePage: React.FC = () => {
                                     </Tooltip>
                                 </Space>
                             }
+                            rules={[{ required: true, message: 'Please enter authorBio' }]}
                         >
                             <TextArea
                                 placeholder="Introduce your professional background, skills, or team experience, e.g., 7 years of AI development experience, specializing in natural language processing"
@@ -323,7 +358,6 @@ const AgentCreatePage: React.FC = () => {
                                     Reset
                                 </Button>
                                 <Button
-                                    type="primary"
                                     htmlType="submit"
                                     size="large"
                                     loading={loading}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Star } from 'lucide-react';
-import { Agent,AgentDetailModalProps } from '@/types/agents/index';
+import { AgentFormData,AgentDetailModalProps } from '@/types/agents/index';
 
 
 
@@ -22,14 +22,14 @@ const AgentDetailModal: React.FC<AgentDetailModalProps> = ({ agent, onClose }) =
           {/* Agent Header */}
           <div className="flex items-center space-x-4 mb-6">
             <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-3xl">{agent.avatar}</span>
+              <span className="text-3xl">🤖</span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{agent.name}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{agent.agentName}</h2>
               <div className="flex items-center space-x-1 mt-1">
                 <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <span className="text-sm text-gray-600">{agent.rating}</span>
-                <span className="text-sm text-gray-400">({agent.reviews} reviews)</span>
+                <span className="text-sm text-gray-600">20</span>
+                <span className="text-sm text-gray-400">(10 reviews)</span>
               </div>
             </div>
           </div>

@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Upload, Star, User, Code, Palette, Settings } from 'lucide-react';
 import AgentDetailModal from './agentDetailModal';
-import { Agent,AgentDetailModalProps } from '@/types/agents/index';
-
-
+import { Agent, AgentDetailModalProps } from '@/types/agents/index';
+import { useImmer } from '@/hooks/UseImmer'
+import agentApi from '@/api/agentApi'
+import { AgentFormData } from '@/types/agents/index';
+import {Button,message,} from 'antd';
 const AgentPage = () => {
+  // const [agentsList, setAgentsList] = useImmer([])
+  const [agentsList, setAgentsList] = useState([])
+  const [totol, setTotol] = useImmer(0)
+  useEffect(() => {
+    getAllAgentsList()
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All Categories');
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<AgentFormData | null>(null);
   const navigate = useNavigate();
 
   const categories = [
@@ -47,49 +56,42 @@ const AgentPage = () => {
     }
   ];
 
-  const agents: Agent[] = [
-    {
-      id: 1,
-      name: '智能助手',
-      category: 'Marketing Expert',
-      rating: 0.0,
-      reviews: 0,
-      description: '可以帮助您介绍产品可以帮助您介绍产品',
-      tags: ['营销', '助手'],
-      features: ['基于理解的技术'],
-      avatar: '🤖',
-      isFree: true
-    },
-    {
-      id: 2,
-      name: '测试云原',
-      category: 'Marketing Expert',
-      rating: 0.0,
-      reviews: 0,
-      description: '这是一个获得没有更多介绍的Agent',
-      tags: ['测试', '云原'],
-      features: ['基于理解的技术'],
-      avatar: '🤖',
-      isFree: true
+  const getAllAgentsList = async () => {
+    try {
+      const res = await agentApi.getAllAgents()
+      setAgentsList(res.data.agents)
+      setTotol(res.data.meta.total)
+      console.log(11111111111, res.data)
+    } catch (error) {
     }
-  ];
-
-  const filteredAgents = agents.filter(agent => 
-    agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  }
   const handleUploadAgent = () => {
     navigate('/agent/create');
   };
 
-  const handleAgentClick = (agent: Agent) => {
+  const handleAgentClick = (agent: AgentFormData) => {
     setSelectedAgent(agent);
   };
 
   const closeModal = () => {
     setSelectedAgent(null);
   };
+  const handleDetele = async (agent: AgentFormData) => {
+     if (window.confirm(`您确定要删除 "${agent.agentName}" 这个Agent吗？此操作无法撤销。`)) {
+      console.log('用户确认删除');
+      try {
+        const id = agent.id;
+          await agentApi.deleteAgent(id as string);
+          getAllAgentsList();
+          message.success('删除成功');
+        } catch (error) {
+          console.error('删除失败:', error);
+        }
+    } else {
+      console.log('用户取消删除');
+    }
+  
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-green-50">
@@ -108,7 +110,7 @@ const AgentPage = () => {
               />
             </div>
           </div>
-          <button 
+          <button
             onClick={handleUploadAgent}
             className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -123,11 +125,10 @@ const AgentPage = () => {
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeCategory === category
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === category
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                }`}
             >
               {category}
             </button>
@@ -173,36 +174,36 @@ const AgentPage = () => {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">All Agents</h2>
-            <span className="text-sm text-gray-500">2 Results</span>
+            <span className="text-sm text-gray-500">{totol} Results</span>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredAgents.map((agent) => (
-              <div 
-                key={agent.id} 
+            {agentsList.map((agent: AgentFormData) => (
+              <div
+                key={agent.id}
                 className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => handleAgentClick(agent)}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">{agent.avatar}</span>
+                      <span className="text-2xl">🤖</span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{agent.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">{agent.agentName}</h3>
                       <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                        {agent.category}
+                        {agent.description}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-sm text-gray-600">{agent.rating} ({agent.reviews})</span>
+                    <span className="text-sm text-gray-600">10</span>
                   </div>
                 </div>
-                
-                <p className="text-gray-600 mb-4">{agent.description}</p>
-                
+
+                <p className="text-gray-600 mb-4">{agent.authorBio}</p>
+
                 <div className="flex flex-wrap gap-2 mb-4">
                   {agent.tags.map((tag, index) => (
                     <span key={index} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
@@ -210,18 +211,20 @@ const AgentPage = () => {
                     </span>
                   ))}
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-500">免费</span>
                     <span className="text-sm text-blue-600">查看详情</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {agent.features.map((feature, index) => (
-                      <span key={index} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                        {feature}
-                      </span>
-                    ))}
+                    <Button size="large" onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('删除按钮被点击了');
+                      handleDetele(agent);
+                    }}>
+                      Detele
+                    </Button>
                   </div>
                 </div>
               </div>
