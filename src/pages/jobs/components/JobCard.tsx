@@ -11,8 +11,10 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
   const getStatusColor = (status: string) => {
     const colors = {
       Open: "green",
+      Distributed: "blue",
       "In Progress": "blue",
       Completed: "gray",
+      Cancelled: "red",
       Expired: "orange",
     };
     return colors[status as keyof typeof colors] || "default";
@@ -20,11 +22,29 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
   const getPriorityColor = (priority: string) => {
     const colors = {
+      Urgent: "red",
       High: "red",
       Medium: "orange",
       Low: "blue",
     };
     return colors[priority as keyof typeof colors] || "default";
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    const icons = {
+      Urgent: "🚨",
+      High: "🔴",
+      Medium: "🟡",
+      Low: "🔵",
+    };
+    return icons[priority as keyof typeof icons] || "";
+  };
+
+  const formatWalletAddress = (address: string) => {
+    if (address.length > 10) {
+      return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    }
+    return address;
   };
 
   return (
@@ -39,12 +59,19 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     >
       {/* Right top tags */}
       <div className="absolute top-3 right-3 flex flex-col items-end gap-1 z-10">
-        <Tag color="red" className="text-xs font-medium px-2 py-0">
-          🚨 Urgent
-        </Tag>
-        <Tag color="purple" className="text-xs font-medium px-2 py-0">
-          ⭐ 2.1K+
-        </Tag>
+        {job.priority && (
+          <Tag
+            color={getPriorityColor(job.priority)}
+            className="text-xs font-medium px-2 py-0"
+          >
+            {getPriorityIcon(job.priority)} {job.priority}
+          </Tag>
+        )}
+        {job.isFree && (
+          <Tag color="purple" className="text-xs font-medium px-2 py-0">
+            💰 FREE
+          </Tag>
+        )}
       </div>
 
       {/* Header with Avatar and Title */}
@@ -53,14 +80,14 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           size={36}
           className="bg-blue-500 flex-shrink-0 text-sm font-bold"
         >
-          {job.id}
+          {job.id.slice(-2)}
         </Avatar>
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-gray-900 mb-1 line-clamp-1 leading-tight">
             {job.title}
           </h3>
           <div className="flex items-center gap-2 text-xs text-gray-600">
-            <span>{job.author}</span>
+            <span>{formatWalletAddress(job.author)}</span>
             <span>•</span>
             <span className="text-blue-500">{job.category}</span>
           </div>
@@ -75,12 +102,6 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           className="text-xs px-2 py-0"
         >
           {job.status}
-        </Tag>
-        <Tag
-          color={getPriorityColor(job.priority)}
-          className="text-xs px-2 py-0"
-        >
-          {job.priority}
         </Tag>
         <span className="text-xs text-gray-500">{job.difficulty}</span>
         <div className="flex items-center text-xs text-gray-500 ml-auto">
@@ -135,6 +156,11 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           {job.isEscrowProtected && (
             <Tag color="blue" size="small" className="text-xs px-1">
               💰 ESCROW
+            </Tag>
+          )}
+          {job.isOpenToBids && (
+            <Tag color="green" size="small" className="text-xs px-1">
+              📝 BIDS
             </Tag>
           )}
         </div>

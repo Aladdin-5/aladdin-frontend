@@ -1,19 +1,32 @@
-import React from 'react';
-import { Row, Col } from 'antd';
-import JobCard from './JobCard';
-import { JobData } from '../types';
+import React from "react";
+import { Row, Col, Empty } from "antd";
+import JobCard from "./JobCard";
+import { JobData } from "../types";
 
 interface JobListProps {
   jobs: JobData[];
+  loading?: boolean;
 }
 
-const JobList: React.FC<JobListProps> = ({ jobs }) => {
-  if (jobs.length === 0) {
+const JobList: React.FC<JobListProps> = ({ jobs, loading = false }) => {
+  // 空状态处理
+  if (!loading && (!jobs || jobs.length === 0)) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 text-6xl mb-4">🔍</div>
-        <h3 className="text-xl font-medium text-gray-900 mb-2">No tasks found</h3>
-        <p className="text-gray-600">Try adjusting your search criteria or post a new task</p>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <div>
+              <div className="text-gray-400 text-6xl mb-4">🔍</div>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">
+                No tasks found
+              </h3>
+              <p className="text-gray-600">
+                Try adjusting your search criteria or post a new task
+              </p>
+            </div>
+          }
+        />
       </div>
     );
   }

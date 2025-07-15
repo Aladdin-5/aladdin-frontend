@@ -11,12 +11,16 @@ import {
   Space,
   InputNumber,
   Tooltip,
+  message,
 } from "antd";
 import {
   InfoCircleOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { CreateJobRequest } from "@/types/jobs/index";
+import jobsApi from "@/api/jobsApi";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -24,22 +28,34 @@ const { Text } = Typography;
 
 const JobCreationForm = () => {
   const [form] = Form.useForm();
-  const [paymentType, setPaymentType] = useState<string>("Pay Per Task");
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [paymentType, setPaymentType] = useState<string>("Fixed Price");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>("");
   const [autoAssign, setAutoAssign] = useState<boolean>(false);
   const [allowBidding, setAllowBidding] = useState<boolean>(true);
-  const [enableEscrow, setEnableEscrow] = useState<boolean>(true);
+  const [escrowEnabled, setEscrowEnabled] = useState<boolean>(true);
+  const [allowParallelExecution, setAllowParallelExecution] =
+    useState<boolean>(false);
+  const [isPublic, setIsPublic] = useState<boolean>(true);
 
   const paymentOptions = [
-    "Pay Per Task",
     "Fixed Price",
     "Hourly Rate",
+    "Pay Per Task",
     "Free Jobs",
   ];
 
   const categories = [
+    "Personal Assistant",
+    "Visual Designer",
     "Marketing Expert",
+    "Biotech Analyst",
+    "Financial Analyst",
+    "Mathematician",
+    "Prediction Market Analyst",
+    "Software",
     "Web Development",
     "Graphic Design",
     "Content Writing",
@@ -48,8 +64,13 @@ const JobCreationForm = () => {
   ];
 
   const priorities = ["Low", "Medium", "High", "Urgent"];
-
   const skillLevels = ["Beginner", "Intermediate", "Advanced", "Expert"];
+
+  // Get current wallet address - in real app, this would come from wallet connection
+  const getCurrentWalletAddress = (): string => {
+    // This is a placeholder - replace with actual wallet connection logic
+    return "0x1234567890abcdef1234567890abcdef12345678";
+  };
 
   const handlePaymentTypeChange = (value: React.SetStateAction<string>) => {
     setPaymentType(value);
@@ -78,16 +99,57 @@ const JobCreationForm = () => {
     }
   };
 
-  const onFinish = (values: any) => {
-    const formData = {
-      ...values,
-      tags,
-      paymentType,
-      autoAssign,
-      allowBidding,
-      enableEscrow,
-    };
-    console.log("Submitted:", formData);
+  const onFinish = async (values: any) => {
+    try {
+      setLoading(true);
+
+      // Prepare budget based on payment type
+      let budget: number | { min: number; max: number };
+      if (paymentType === "Free Jobs") {
+        budget = 50; // Deposit amount for free jobs
+      } else {
+        if (values.budgetMin && values.budgetMax) {
+          budget = { min: values.budgetMin, max: values.budgetMax };
+        } else if (values.budgetMin) {
+          budget = values.budgetMin;
+        } else {
+          budget = 0;
+        }
+      }
+
+      const jobData: CreateJobRequest = {
+        jobTitle: values.jobTitle,
+        category: values.category,
+        description: values.description,
+        deliverables: values.deliverables,
+        budget,
+        deadline: values.deadline.toISOString(),
+        paymentType,
+        priority: values.priority,
+        skillLevel: values.skillLevel,
+        tags,
+        autoAssign,
+        allowBidding,
+        allowParallelExecution,
+        escrowEnabled,
+        isPublic,
+        walletAddress: getCurrentWalletAddress(),
+      };
+
+      const createdJob = await jobsApi.createJob(jobData);
+      message.success("Job created successfully!");
+      console.log("Created job:", createdJob);
+
+      // Navigate back to jobs list
+      navigate("/jobs");
+    } catch (error) {
+      console.error("Error creating job:", error);
+      message.error(
+        error instanceof Error ? error.message : "Failed to create job"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderPaymentSection = () => {
@@ -317,7 +379,7 @@ const JobCreationForm = () => {
                 </Space>
               }
               name="paymentType"
-              initialValue="Pay Per Task"
+              initialValue="Fixed Price"
             >
               <Select
                 value={paymentType}
@@ -339,7 +401,10 @@ const JobCreationForm = () => {
               name="deadline"
               rules={[{ required: true, message: "Please set a deadline" }]}
             >
-              <DatePicker placeholder="年/月/日" className="w-full h-10" />
+              <DatePicker
+                placeholder="Select deadline"
+                className="w-full h-10"
+              />
             </Form.Item>
 
             <Form.Item
@@ -426,7 +491,7 @@ const JobCreationForm = () => {
                       }}
                     />
                     <Text type="secondary" className="text-sm">
-                      Manually select Agent
+                      {autoAssign ? "Auto assign enabled" : "Manual selection"}
                     </Text>
                   </div>
                 </div>
@@ -450,7 +515,7 @@ const JobCreationForm = () => {
                       }}
                     />
                     <Text type="secondary" className="text-sm">
-                      Enable bidding mode
+                      {allowBidding ? "Bidding enabled" : "Bidding disabled"}
                     </Text>
                   </div>
                 </div>
@@ -466,15 +531,69 @@ const JobCreationForm = () => {
                   </div>
                   <div className="flex items-center space-x-3">
                     <Switch
-                      checked={enableEscrow}
-                      onChange={setEnableEscrow}
+                      checked={escrowEnabled}
+                      onChange={setEscrowEnabled}
                       style={{
-                        backgroundColor: enableEscrow ? "#3b82f6" : "#d1d5db",
-                        borderColor: enableEscrow ? "#3b82f6" : "#d1d5db",
+                        backgroundColor: escrowEnabled ? "#3b82f6" : "#d1d5db",
+                        borderColor: escrowEnabled ? "#3b82f6" : "#d1d5db",
                       }}
                     />
                     <Text type="secondary" className="text-sm">
-                      Deposit escrow (refunded after task completion)
+                      {escrowEnabled ? "Escrow enabled" : "Escrow disabled"}
+                    </Text>
+                  </div>
+                </div>
+
+                <div className="flex items-center">
+                  <div className="flex items-center space-x-3 w-48">
+                    <Text className="font-medium text-gray-800">
+                      Parallel Execution
+                    </Text>
+                    <Tooltip title="Allow multiple agents to work on this job">
+                      <QuestionCircleOutlined className="text-gray-400" />
+                    </Tooltip>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Switch
+                      checked={allowParallelExecution}
+                      onChange={setAllowParallelExecution}
+                      style={{
+                        backgroundColor: allowParallelExecution
+                          ? "#3b82f6"
+                          : "#d1d5db",
+                        borderColor: allowParallelExecution
+                          ? "#3b82f6"
+                          : "#d1d5db",
+                      }}
+                    />
+                    <Text type="secondary" className="text-sm">
+                      {allowParallelExecution
+                        ? "Multiple agents allowed"
+                        : "Single agent only"}
+                    </Text>
+                  </div>
+                </div>
+
+                <div className="flex items-center">
+                  <div className="flex items-center space-x-3 w-48">
+                    <Text className="font-medium text-gray-800">
+                      Public Job
+                    </Text>
+                    <Tooltip title="Make this job visible to all agents">
+                      <QuestionCircleOutlined className="text-gray-400" />
+                    </Tooltip>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Switch
+                      checked={isPublic}
+                      onChange={setIsPublic}
+                      style={{
+                        backgroundColor: isPublic ? "#3b82f6" : "#d1d5db",
+                        borderColor: isPublic ? "#3b82f6" : "#d1d5db",
+                      }}
+                    />
+                    <Text type="secondary" className="text-sm">
+                      {isPublic ? "Visible to all" : "Private job"}
                     </Text>
                   </div>
                 </div>
@@ -486,6 +605,7 @@ const JobCreationForm = () => {
                 size="large"
                 className="px-8"
                 onClick={() => form.resetFields()}
+                disabled={loading}
               >
                 Reset
               </Button>
@@ -494,6 +614,7 @@ const JobCreationForm = () => {
                 size="large"
                 onClick={() => form.submit()}
                 className="px-8"
+                loading={loading}
                 style={{
                   backgroundColor: "#1677ff",
                   borderColor: "#1677ff",
