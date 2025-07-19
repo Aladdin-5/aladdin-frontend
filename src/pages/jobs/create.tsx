@@ -332,6 +332,11 @@ const JobCreationForm = () => {
                     onClick={handleTagAdd}
                     disabled={!tagInput.trim()}
                     className="h-10"
+                    style={{
+                      backgroundColor: "#1677ff",
+                      borderColor: "#1677ff",
+                      color: "#fff",
+                    }}
                   >
                     Add
                   </Button>
