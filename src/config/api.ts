@@ -3,62 +3,62 @@ import {ApiParams,ApiConfig,ApiData} from './apiTypes'
 import SimpleMetaMaskAuth from '@/utils/metaMask'
 
 class ApiClient {
-  private auth: SimpleMetaMaskAuth;
-  constructor() {
-    this.auth = SimpleMetaMaskAuth.getInstance();
-    this.setupInterceptors();
-  }
-   // 设置请求拦截器
-  private setupInterceptors(): void {
-    // 请求拦截器
-    axios.interceptors.request.use((config) => {
-      // 如果已连接钱包，添加钱包地址到请求头
-      if (this.auth.getIsConnected()) {
-        config.headers['X-Wallet-Address'] = this.auth.getWalletAddress();
-      }
+  // private auth: SimpleMetaMaskAuth;
+  // constructor() {
+  //   this.auth = SimpleMetaMaskAuth.getInstance();
+  //   this.setupInterceptors();
+  // }
+  //  // 设置请求拦截器
+  // private setupInterceptors(): void {
+  //   // 请求拦截器
+  //   axios.interceptors.request.use((config) => {
+  //     // 如果已连接钱包，添加钱包地址到请求头
+  //     if (this.auth.getIsConnected()) {
+  //       config.headers['X-Wallet-Address'] = this.auth.getWalletAddress();
+  //     }
       
-      config.headers['Content-Type'] = 'application/json';
-      config.headers['Accept'] = 'application/json';
+  //     config.headers['Content-Type'] = 'application/json';
+  //     config.headers['Accept'] = 'application/json';
       
-      return config;
-    });
+  //     return config;
+  //   });
 
-    // 响应拦截器
-    axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // 认证失败，提示重新连接钱包
-          this.showWalletPrompt();
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
+  //   // 响应拦截器
+  //   axios.interceptors.response.use(
+  //     (response) => response,
+  //     (error) => {
+  //       if (error.response?.status === 401) {
+  //         // 认证失败，提示重新连接钱包
+  //         this.showWalletPrompt();
+  //       }
+  //       return Promise.reject(error);
+  //     }
+  //   );
+  // }
 
-  // 检查钱包连接状态
-  private checkWalletConnection(): void {
-    if (!this.auth.getIsConnected()) {
-      this.showWalletPrompt();
-      throw new Error('钱包未连接');
-    }
-  }
+  // // 检查钱包连接状态
+  // private checkWalletConnection(): void {
+  //   if (!this.auth.getIsConnected()) {
+  //     this.showWalletPrompt();
+  //     throw new Error('钱包未连接');
+  //   }
+  // }
 
-  // 显示钱包连接提示
-  private showWalletPrompt(): void {
-    const shouldConnect = confirm('需要连接 MetaMask 钱包才能继续操作');
+  // // 显示钱包连接提示
+  // private showWalletPrompt(): void {
+  //   const shouldConnect = confirm('需要连接 MetaMask 钱包才能继续操作');
     
-    if (shouldConnect) {
-      this.auth.connectWallet()
-        .then(() => {
-          alert('钱包连接成功！');
-          window.location.reload();
-        })
-        .catch((error) => {
-          alert(`连接失败: ${error.message}`);
-        });
-    }
-  }
+  //   if (shouldConnect) {
+  //     this.auth.connectWallet()
+  //       .then(() => {
+  //         alert('钱包连接成功！');
+  //         window.location.reload();
+  //       })
+  //       .catch((error) => {
+  //         alert(`连接失败: ${error.message}`);
+  //       });
+  //   }
+  // }
   /**S
    * GET 请求
    * @param url - 请求地址
@@ -136,7 +136,7 @@ class ApiClient {
   /**
    * PATCH 请求
    */
-  async patch<T = any>(
+  asyncpatch<T = any>(
     url: string, 
     data?: ApiData
   ): Promise<AxiosResponse<T>> {
@@ -158,7 +158,7 @@ class ApiClient {
   /**
    * DELETE 请求
    */
-   async delete<T = any>(
+  delete<T = any>(
     url: string, 
     data?: ApiData
   ): Promise<AxiosResponse<T>> {
