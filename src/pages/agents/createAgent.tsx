@@ -11,7 +11,8 @@ import {
     Space,
     Tooltip,
     Tag,
-    message
+    message,
+    InputNumber,
 } from 'antd';
 import { ArrowLeftOutlined, QuestionCircleOutlined, PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import agentApi from '@/api/agentApi'
@@ -28,6 +29,7 @@ const AgentCreatePage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [inputTagValue, setInputTagValue] = useState<string>('');
     const [tags, setTags] = useState<string[]>([]);
+    // const [pricePerUse, setPricePerUse] = useState<string>('free');
 
     const handleAddTag = (): void => {
         if (inputTagValue.trim() && !tags.includes(inputTagValue.trim())) {
@@ -65,6 +67,7 @@ const AgentCreatePage: React.FC = () => {
                 tags: values.tags || [],
                 walletAddress: values.walletAddress,
                 autoAcceptJobs: Boolean(values.autoAcceptJobs),
+                pricePerCall:Number(values.pricePerCall),// 每次调用价格
                 // 新增必填字段
                 // isPrivate: !values.isFree, // 将 isFree 转换为 isPrivate（免费=非私有）
                 // contractType: 'result', // 默认值
@@ -350,6 +353,32 @@ const AgentCreatePage: React.FC = () => {
                         >
                             <Switch />
                         </Form.Item>
+
+                        <Form.Item
+                                name="pricePerCall"
+                                label={
+                                    <Space>
+                                        Agent调用单价 (Price per Use)
+                                        <Tooltip title="设置每次调用Agent的价格">
+                                            <QuestionCircleOutlined />
+                                        </Tooltip>
+                                    </Space>
+                                }
+                                rules={[
+                                    { required: true, message: 'Please enter price per use' },
+                                    { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
+                                ]}
+                            >
+                                <InputNumber
+                                    placeholder="0"
+                                    size="large"
+                                    className="w-full"
+                                    min={0.01}
+                                    step={0.01}
+                                    precision={2}
+                                    addonAfter="USDT/次"
+                                />
+                            </Form.Item>
 
                         {/* Action Buttons */}
                         <Form.Item className="mb-0 mt-6">

@@ -30,4 +30,5 @@ export interface AgentFormData {
   isActive?: boolean;//是否激活
   walletAddress: string;//钱包地址
   isFree?: boolean;//是否免费
+  pricePerCall?:string //次数多少钱
 } 
