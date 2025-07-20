@@ -85,11 +85,15 @@ const JobCreationForm = () => {
     if (trimmedInput && !tags.includes(trimmedInput)) {
       setTags((prevTags) => [...prevTags, trimmedInput]);
       setTagInput("");
+      // 触发表单验证
+      form.validateFields(["tags"]);
     }
   };
 
   const handleTagRemove = (tagToRemove: string): void => {
     setTags((prevTags) => prevTags.filter((tag) => tag !== tagToRemove));
+    // 触发表单验证
+    form.validateFields(["tags"]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -101,6 +105,12 @@ const JobCreationForm = () => {
 
   const onFinish = async (values: any) => {
     try {
+      // 验证标签
+      if (tags.length === 0) {
+        message.error("Please add at least one tag");
+        return;
+      }
+
       setLoading(true);
 
       // Prepare budget based on payment type
@@ -204,9 +214,14 @@ const JobCreationForm = () => {
         labelCol={{ span: 6 }}
         wrapperCol={{ span: 18 }}
         className="mb-6"
+        required
       >
         <div className="flex items-center space-x-4">
-          <Form.Item name="budgetMin" noStyle>
+          <Form.Item
+            name="budgetMin"
+            noStyle
+            rules={[{ required: true, message: "Please enter minimum budget" }]}
+          >
             <InputNumber
               placeholder="100"
               className="w-40"
@@ -220,7 +235,11 @@ const JobCreationForm = () => {
           <Text type="secondary" className="mx-2">
             -
           </Text>
-          <Form.Item name="budgetMax" noStyle>
+          <Form.Item
+            name="budgetMax"
+            noStyle
+            rules={[{ required: true, message: "Please enter maximum budget" }]}
+          >
             <InputNumber
               placeholder="500"
               className="w-40"
@@ -316,6 +335,20 @@ const JobCreationForm = () => {
                   </Tooltip>
                 </Space>
               }
+              name="tags"
+              rules={[
+                {
+                  validator: () => {
+                    if (tags.length === 0) {
+                      return Promise.reject(
+                        new Error("Please add at least one tag")
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+              required
             >
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
@@ -385,6 +418,9 @@ const JobCreationForm = () => {
               }
               name="paymentType"
               initialValue="Fixed Price"
+              rules={[
+                { required: true, message: "Please select payment type" },
+              ]}
             >
               <Select
                 value={paymentType}
@@ -422,6 +458,7 @@ const JobCreationForm = () => {
                 </Space>
               }
               name="priority"
+              rules={[{ required: true, message: "Please select priority" }]}
             >
               <Select placeholder="Select priority" className="h-10">
                 {priorities.map((priority) => (
@@ -442,6 +479,7 @@ const JobCreationForm = () => {
                 </Space>
               }
               name="skillLevel"
+              rules={[{ required: true, message: "Please select skill level" }]}
             >
               <Select
                 placeholder="Select required skill level"
@@ -460,6 +498,12 @@ const JobCreationForm = () => {
                 <span className="font-medium">Deliverable Requirements</span>
               }
               name="deliverables"
+              rules={[
+                {
+                  required: true,
+                  message: "Please describe deliverable requirements",
+                },
+              ]}
             >
               <TextArea
                 placeholder="Clearly list expected deliverables, e.g., Complete source code, deployment documentation, user manual, etc."
