@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Form,
   Input,
@@ -21,7 +21,18 @@ import {
 import { useNavigate } from "react-router-dom";
 import { CreateJobRequest } from "@/types/jobs/index";
 import jobsApi from "@/api/jobsApi";
-
+import { 
+  useAccount, 
+  useBalance, 
+  useChainId, 
+  useSwitchChain,
+  useReadContract, 
+  useWriteContract, 
+  useWaitForTransactionReceipt 
+} from 'wagmi'
+import { formatUnits, parseUnits } from 'viem'
+import { MY_CONTRACT_ADDRESS, MY_CONTRACT_ABI } from '@/abis/contractABI'
+import { ERC20_ABI } from "@/abis/ERC20ABI"
 const { Option } = Select;
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -39,6 +50,199 @@ const JobCreationForm = () => {
   const [allowParallelExecution, setAllowParallelExecution] =
     useState<boolean>(false);
   const [isPublic, setIsPublic] = useState<boolean>(true);
+
+  // 存款相关状态
+  const [depositAmount, setDepositAmount] = useState('')
+  const [autoDepositAfterApproval, setAutoDepositAfterApproval] = useState(false)
+  const [isJobCreationDeposit, setIsJobCreationDeposit] = useState(false) // 标记是否为任务创建后的托管
+  const [depositNotification, setDepositNotification] = useState<{type: 'success' | 'error' | 'info', message: string} | null>(null)
+
+  // 钱包状态
+  const { address, isConnected } = useAccount()
+  const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
+
+  // 显示存款通知
+  const showDepositNotification = (type: 'success' | 'error' | 'info', msg: string) => {
+    setDepositNotification({ type, message: msg })
+    setTimeout(() => setDepositNotification(null), 5000)
+    // 同时显示 antd message
+    if (type === 'success') message.success(msg)
+    else if (type === 'error') message.error(msg)
+    else message.info(msg)
+  }
+
+  // 获取 USDT 合约地址
+  const { 
+    data: contractUsdtAddress,
+  } = useReadContract({
+    address: MY_CONTRACT_ADDRESS,
+    abi: MY_CONTRACT_ABI,
+    functionName: 'USDT',
+    query: { 
+      enabled: !!MY_CONTRACT_ADDRESS 
+    }
+  })
+
+  // 查询用户对合约的 USDT 授权额度
+  const { 
+    data: allowance, 
+    refetch: refetchAllowance,
+    isLoading: allowanceLoading 
+  } = useReadContract({
+    address: contractUsdtAddress as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: address && contractUsdtAddress ? [address, MY_CONTRACT_ADDRESS] : undefined,
+    query: { 
+      enabled: !!address && !!contractUsdtAddress 
+    }
+  })
+
+  // USDT 余额查询
+  const { 
+    data: usdtBalance, 
+    isLoading: usdtBalanceLoading, 
+    refetch: refetchUsdtBalance 
+  } = useBalance({ 
+    address: address,
+    token: contractUsdtAddress as `0x${string}` | undefined,
+    query: { 
+      enabled: !!address && !!contractUsdtAddress 
+    }
+  })
+
+  // 合约写入
+  const { 
+    data: txHash, 
+    writeContract, 
+    isPending: isWriting,
+    error: writeError,
+    reset: resetWrite 
+  } = useWriteContract()
+
+  const { 
+    isLoading: isConfirming, 
+    isSuccess: isConfirmed,
+    error: confirmError 
+  } = useWaitForTransactionReceipt({ 
+    hash: txHash,
+    query: { 
+      enabled: !!txHash 
+    }
+  })
+
+  // 交易成功后处理
+  useEffect(() => {
+    if (isConfirmed && txHash) {
+      const refreshData = async () => {
+        try {
+          await Promise.all([
+            refetchUsdtBalance(),
+            refetchAllowance(),
+          ])
+          
+          if (autoDepositAfterApproval) {
+            // 手动存款流程：授权后自动存款
+            showDepositNotification('success', '✅ 授权成功！正在自动执行存款...')
+            setAutoDepositAfterApproval(false)
+            setTimeout(() => {
+              handleActualDeposit()
+            }, 1000)
+          } else if (isJobCreationDeposit) {
+            // 任务创建后的资金托管完成
+            showDepositNotification('success', '🎉 资金托管成功！任务已创建并完成资金托管')
+            message.success('任务创建并资金托管完成，正在跳转...')
+            setDepositAmount('')
+            setIsJobCreationDeposit(false)
+            
+            // 延迟导航，让用户看到成功消息
+            setTimeout(() => {
+              navigate("/jobs");
+            }, 2000);
+          } else {
+            // 普通的手动存款完成
+            showDepositNotification('success', '存款成功！资金已托管到智能合约')
+            setDepositAmount('')
+          }
+          
+          resetWrite()
+        } catch (error) {
+          console.error('刷新数据失败:', error)
+        }
+      }
+      refreshData()
+    }
+  }, [isConfirmed, txHash, autoDepositAfterApproval, isJobCreationDeposit, navigate])
+
+  // 处理错误
+  useEffect(() => {
+    if (writeError) {
+      showDepositNotification('error', `交易失败: ${writeError.message}`)
+    }
+    if (confirmError) {
+      showDepositNotification('error', `交易确认失败: ${confirmError.message}`)
+    }
+  }, [writeError, confirmError])
+
+  // 实际执行存款
+  const handleActualDeposit = async () => {
+    if (!depositAmount || !address) return
+    
+    try {
+      const amount = parseUnits(depositAmount, 6)
+      
+      showDepositNotification('info', '💰 正在存款到托管合约，请确认钱包交易...')
+      
+      writeContract({
+        address: MY_CONTRACT_ADDRESS,
+        abi: MY_CONTRACT_ABI,
+        functionName: 'depositUSDT',
+        args: [amount]
+      })
+      
+    } catch (error) {
+      console.error('存款错误:', error)
+      showDepositNotification('error', '存款失败，请重试')
+    }
+  }
+
+  // 获取预算最大值作为存款金额
+  const getBudgetMaxForDeposit = (): string => {
+    const formValues = form.getFieldsValue();
+    
+    if (paymentType === "Free Jobs") {
+      return "50"; // Free Jobs 固定 50 USDT
+    }
+    
+    if (formValues.budgetMax && Number(formValues.budgetMax) > 0) {
+      return formValues.budgetMax.toString();
+    }
+    
+    return "0";
+  };
+
+  // 自动设置存款金额为预算最大值
+  const autoSetDepositAmount = () => {
+    const maxBudget = getBudgetMaxForDeposit();
+    if (maxBudget && Number(maxBudget) > 0) {
+      setDepositAmount(maxBudget);
+      showDepositNotification('info', `已自动设置托管金额为预算最大值: ${maxBudget} USDT`);
+    }
+  };
+
+  // 监听表单变化，自动更新存款金额
+  const handleFormValuesChange = (changedValues: any, allValues: any) => {
+    if (changedValues.budgetMax || changedValues.paymentType) {
+      // 当预算最大值或支付类型改变时，自动更新存款金额
+      setTimeout(() => {
+        const maxBudget = getBudgetMaxForDeposit();
+        if (maxBudget && Number(maxBudget) > 0) {
+          setDepositAmount(maxBudget);
+        }
+      }, 100);
+    }
+  };
 
   const paymentOptions = [
     "Fixed Price",
@@ -66,10 +270,12 @@ const JobCreationForm = () => {
   const priorities = ["Low", "Medium", "High", "Urgent"];
   const skillLevels = ["Beginner", "Intermediate", "Advanced", "Expert"];
 
-  // Get current wallet address - in real app, this would come from wallet connection
+  // Get current wallet address
   const getCurrentWalletAddress = (): string => {
-    // This is a placeholder - replace with actual wallet connection logic
-    return "0x1234567890abcdef1234567890abcdef12345678";
+    if (!isConnected || !address) {
+      throw new Error("Wallet not connected. Please connect your wallet first.");
+    }
+    return address;
   };
 
   const handlePaymentTypeChange = (value: React.SetStateAction<string>) => {
@@ -85,14 +291,12 @@ const JobCreationForm = () => {
     if (trimmedInput && !tags.includes(trimmedInput)) {
       setTags((prevTags) => [...prevTags, trimmedInput]);
       setTagInput("");
-      // 触发表单验证
       form.validateFields(["tags"]);
     }
   };
 
   const handleTagRemove = (tagToRemove: string): void => {
     setTags((prevTags) => prevTags.filter((tag) => tag !== tagToRemove));
-    // 触发表单验证
     form.validateFields(["tags"]);
   };
 
@@ -105,25 +309,66 @@ const JobCreationForm = () => {
 
   const onFinish = async (values: any) => {
     try {
-      // 验证标签
+      // 检查标签
       if (tags.length === 0) {
         message.error("Please add at least one tag");
         return;
       }
 
+      // 检查钱包连接状态
+      if (!isConnected || !address) {
+        message.error("Please connect your wallet first to create a job");
+        return;
+      }
+
+      // 检查网络
+      if (chainId && chainId !== 11155111) {
+        message.error("Please switch to Sepolia testnet to create a job");
+        return;
+      }
+
       setLoading(true);
 
-      // Prepare budget based on payment type
+      // 准备预算数据
       let budget: number | { min: number; max: number };
+      let escrowAmount = 0; // 托管金额
+
       if (paymentType === "Free Jobs") {
-        budget = 50; // Deposit amount for free jobs
+        budget = 50;
+        escrowAmount = 50; // Free Jobs 托管 50 USDT
       } else {
         if (values.budgetMin && values.budgetMax) {
           budget = { min: values.budgetMin, max: values.budgetMax };
+          escrowAmount = values.budgetMax; // 使用预算最大值作为托管金额
         } else if (values.budgetMin) {
           budget = values.budgetMin;
+          escrowAmount = values.budgetMin;
         } else {
           budget = 0;
+          escrowAmount = 0;
+        }
+      }
+
+      // 如果启用了资金托管，先检查条件
+      if (escrowEnabled && escrowAmount > 0) {
+        // 检查 USDT 余额
+        if (usdtBalance) {
+          const requiredAmount = parseUnits(escrowAmount.toString(), 6);
+          if (requiredAmount > usdtBalance.value) {
+            message.error(`USDT 余额不足。需要 ${escrowAmount} USDT，当前余额 ${Number(formatUnits(usdtBalance.value, 6)).toFixed(2)} USDT`);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // 检查授权额度
+        if (allowance) {
+          const requiredAmount = parseUnits(escrowAmount.toString(), 6);
+          if (allowance < requiredAmount) {
+            message.error(`授权额度不足。需要先授权 ${escrowAmount} USDT 给合约`);
+            setLoading(false);
+            return;
+          }
         }
       }
 
@@ -143,20 +388,61 @@ const JobCreationForm = () => {
         allowParallelExecution,
         escrowEnabled,
         isPublic,
-        walletAddress: getCurrentWalletAddress(),
+        walletAddress: getCurrentWalletAddress(), // 使用真实钱包地址
       };
 
+      // 🎯 第一步：调用 API 创建任务
+      message.info("正在创建任务...");
       const createdJob = await jobsApi.createJob(jobData);
       message.success("Job created successfully!");
+      
       console.log("Created job:", createdJob);
+      console.log("Wallet address used:", getCurrentWalletAddress());
+      console.log("Escrow amount:", escrowAmount);
 
-      // Navigate back to jobs list
-      navigate("/jobs");
+      // 🎯 第二步：API 调用成功后，执行资金托管
+      if (escrowEnabled && escrowAmount > 0) {
+        try {
+          message.info(`任务创建成功！正在托管 ${escrowAmount} USDT 到智能合约...`);
+          
+          const amount = parseUnits(escrowAmount.toString(), 6);
+          
+          // 设置标识，表示这是任务创建后的自动托管
+          setIsJobCreationDeposit(true);
+          setAutoDepositAfterApproval(false); // 重置自动存款标记
+          
+          // 调用智能合约存款
+          writeContract({
+            address: MY_CONTRACT_ADDRESS,
+            abi: MY_CONTRACT_ABI,
+            functionName: 'depositUSDT',
+            args: [amount]
+          });
+          
+          showDepositNotification('info', `正在执行资金托管 ${escrowAmount} USDT，请确认钱包交易...`);
+          
+        } catch (escrowError) {
+          console.error('资金托管失败:', escrowError);
+          message.warning(`任务创建成功，但资金托管失败：${escrowError instanceof Error ? escrowError.message : '未知错误'}。您可以稍后手动托管资金。`);
+          // 即使托管失败，也导航到任务列表，因为任务已经创建成功
+          navigate("/jobs");
+        }
+      } else {
+        // 如果没有启用托管，直接导航
+        navigate("/jobs");
+      }
+
     } catch (error) {
       console.error("Error creating job:", error);
-      message.error(
-        error instanceof Error ? error.message : "Failed to create job"
-      );
+      
+      // 针对钱包错误的特殊处理
+      if (error instanceof Error && error.message.includes("Wallet not connected")) {
+        message.error("Please connect your wallet to create a job");
+      } else {
+        message.error(
+          error instanceof Error ? error.message : "Failed to create job"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -263,6 +549,53 @@ const JobCreationForm = () => {
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
               Create Job
             </h1>
+            
+            {/* 钱包连接状态显示 */}
+            {isConnected && address ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <Text className="text-green-700 font-medium">钱包已连接</Text>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Text type="secondary" className="text-sm">地址:</Text>
+                    <Text className="font-mono text-sm text-green-700">
+                      {`${address.slice(0, 6)}...${address.slice(-4)}`}
+                    </Text>
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={() => {
+                        navigator.clipboard.writeText(address);
+                        message.success("钱包地址已复制到剪贴板");
+                      }}
+                      className="p-0 h-auto text-green-600 hover:text-green-800"
+                    >
+                      复制
+                    </Button>
+                  </div>
+                </div>
+                {chainId && chainId !== 11155111 && (
+                  <div className="mt-2 flex items-center space-x-2 text-orange-600">
+                    <InfoCircleOutlined />
+                    <Text className="text-sm">
+                      请切换到 Sepolia 测试网络以创建任务
+                    </Text>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center space-x-2">
+                  <InfoCircleOutlined className="text-yellow-600" />
+                  <Text className="text-yellow-700">
+                    请先连接钱包以创建任务和进行资金托管
+                  </Text>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2 text-sm text-blue-600">
               <div className="flex items-center space-x-2">
                 <InfoCircleOutlined />
@@ -295,6 +628,7 @@ const JobCreationForm = () => {
             wrapperCol={{ span: 18 }}
             labelAlign="left"
             onFinish={onFinish}
+            onValuesChange={handleFormValuesChange}
             className="space-y-6"
           >
             <Form.Item
