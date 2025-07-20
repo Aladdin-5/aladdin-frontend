@@ -1,5 +1,4 @@
-// src/contracts/contractABI.ts
-export const MY_CONTRACT_ABI = [
+[
   {
     "anonymous": false,
     "inputs": [
@@ -141,13 +140,4 @@ export const MY_CONTRACT_ABI = [
     "stateMutability": "view",
     "type": "function"
   }
-] as const;
-
-// 合约地址配置
-export const MY_CONTRACT_ADDRESS = "0x09595DB7f22eB0f96f48dEb227174b3DbD350f2f" as `0x${string}`;
-
-// 合约配置对象
-export const contractConfig = {
-  address: MY_CONTRACT_ADDRESS,
-  abi: MY_CONTRACT_ABI,
-} as const;
+]
