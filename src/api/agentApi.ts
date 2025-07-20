@@ -1,8 +1,8 @@
 import apiClient from "@/config/api"
 import {ApiParams,ApiConfig,ApiData} from '@/config/apiTypes'
 import {AgentFormData} from '@/types/agents/index'
-// const url='https://qvn0otpzd9.execute-api.us-west-1.amazonaws.com/dev'
-const url = 'http://localhost:3999'
+const url='https://qvn0otpzd9.execute-api.us-west-1.amazonaws.com/dev'
+// const url = 'http://localhost:3999'
 
 
 const agentApi= { 

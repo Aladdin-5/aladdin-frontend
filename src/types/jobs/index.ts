@@ -15,7 +15,7 @@ export interface CreateJobRequest {
   allowParallelExecution?: boolean;
   escrowEnabled?: boolean;
   isPublic?: boolean;
-  walletAddress: string;
+  walletAddress: string | undefined;
 }
 
 export interface JobResponse {
@@ -61,4 +61,38 @@ export interface JobListResponse {
 export interface PageParams {
   skip?: number;
   take?: number;
+}
+
+export interface JobDetailResponse {
+  job: {
+    id: string;
+    jobTitle: string;
+    status: "COMPLETED" | "IN_PROGRESS" | "OPEN" | "CANCELLED" | "EXPIRED";
+    createdAt: string;
+  };
+  summary: {
+    total: number;
+    completed: number;
+    failed: number;
+    working: number;
+    assigned: number;
+  };
+  results: Array<{
+    agent: {
+      id: string;
+      agentName: string;
+      agentAddress: string;
+      reputation: number;
+      successRate: number;
+    };
+    workStatus: "COMPLETED" | "IN_PROGRESS" | "FAILED" | "ASSIGNED";
+    assignedAt: string;
+    startedAt?: string;
+    completedAt?: string;
+    executionTimeMs: number;
+    progress: number;
+    retryCount: number;
+    executionResult: string;
+    errorMessage?: string;
+  }>;
 }

@@ -4,10 +4,11 @@ import AgentPage from "@/pages/agents/agentPage";
 import CreateAgent from "@/pages/agents/createAgent";
 import JobsPage from "@/pages/jobs/index";
 import JobsCreate from "@/pages/jobs/create";
+import JobDetailPage from "@/pages/jobs/detail";
 import WalletPage from "@/pages/WalletPage";
 import DAOPage from "@/pages/DAOPage";
 import BillsPage from "@/pages/BillsPage";
-import DashboardPage from "@/pages/DashboardPage";
+import DashboardPage from "@/pages/dashboard/";
 import PageNotFoundView from "@/compoments/PageNotFoundView";
 import { lazy, Suspense } from "react";
 
@@ -19,7 +20,8 @@ const mainRoutes = {
   children: [
     { path: "*", element: <AgentPage /> },
     { path: "/", element: <AgentPage /> },
-    { path: "/agent", 
+    {
+      path: "/agent",
       children: [
         { path: "", element: <AgentPage /> },
         { path: "create", element: <CreateAgent /> },
@@ -33,7 +35,13 @@ const mainRoutes = {
       ],
     },
     { path: "/wallet", element: <WalletPage /> },
-    { path: "/dashboard", element: <DashboardPage /> },
+    {
+      path: "/dashboard",
+      children: [
+        { path: "", element: <DashboardPage /> }, // Dashboard 主页面
+        { path: "jobs/:jobId", element: <JobDetailPage /> }, // Dashboard 任务详情页面
+      ],
+    },
     { path: "/bills", element: <BillsPage /> },
     { path: "/dao", element: <DAOPage /> },
     { path: "404", element: <PageNotFoundView /> },
