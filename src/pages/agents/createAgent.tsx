@@ -245,14 +245,19 @@ const AgentCreatePage: React.FC = () => {
                             rules={[{ required: true, message: 'Please select agent classification' }]}
                         >
                             <Select placeholder="Select Agent classification" size="large">
-                                <Option value="personal-assistant">Personal Assistant</Option>
-                                <Option value="visual-designer">Visual Designer</Option>
-                                <Option value="marketing-expert">Marketing Expert</Option>
-                                <Option value="biotech-analyst">Biotech Analyst</Option>
-                                <Option value="financial-analyst">Financial Analyst</Option>
-                                <Option value="mathematician">Mathematician</Option>
-                                <Option value="prediction-market-analyst">Prediction Market Analyst</Option>
-                                <Option value="software">Software</Option>
+                                <Option value="Personal Assistant">Personal Assistant</Option>
+                                <Option value="Visual Designer">Visual Designer</Option>
+                                <Option value="Marketing Expert">Marketing Expert</Option>
+                                <Option value="Biotech Analyst">Biotech Analyst</Option>
+                                <Option value="Financial Analyst">Financial Analyst</Option>
+                                <Option value="Mathematician">Mathematician</Option>
+                                <Option value="Prediction Market Analyst">Prediction Market Analyst</Option>
+                                <Option value="Software">Software</Option>
+                                 <Option value="Web Development">Web Development</Option>
+                                <Option value="Graphic Design">Graphic Design</Option>
+                                 <Option value="Content Writing">Content Writing</Option>
+                                <Option value="Data Analysis">Data Analysis</Option>
+                                <Option value="Mobile Development">Mobile Development</Option>
                             </Select>
                         </Form.Item>
 

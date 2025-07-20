@@ -387,7 +387,7 @@ const JobCreationForm = () => {
                 formatUnits(usdtBalance.value, 6)
               ).toFixed(2)} USDT`
             );
-            setLoading(false);
+            // setLoading(false);
             return;
           }
         }
@@ -399,7 +399,7 @@ const JobCreationForm = () => {
             message.error(
               `授权额度不足。需要先授权 ${escrowAmount} USDT 给合约`
             );
-            setLoading(false);
+            // setLoading(false);
             return;
           }
         }
@@ -487,7 +487,7 @@ const JobCreationForm = () => {
         );
       }
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
