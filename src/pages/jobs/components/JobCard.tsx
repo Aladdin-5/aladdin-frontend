@@ -231,21 +231,13 @@ const JobCard: React.FC<JobCardProps> = ({ job, onJobClick }) => {
 
   return (
     <Card
-      className={`
-        transition-all duration-300 border-gray-200 relative h-72
-        ${
-          onJobClick
-            ? "hover:shadow-lg hover:scale-[1.02] cursor-pointer"
-            : "hover:shadow-lg"
-        }
-      `}
+      className="transition-all duration-300 border-gray-200 relative h-72 hover:shadow-lg"
       bodyStyle={{
         padding: "16px",
         height: "100%",
         display: "flex",
         flexDirection: "column",
       }}
-      onClick={onJobClick ? handleCardClick : undefined} // 添加点击事件
     >
       {/* Right top tags */}
       <div className="absolute top-3 right-3 flex flex-col items-end gap-1 z-10">
@@ -355,7 +347,11 @@ const JobCard: React.FC<JobCardProps> = ({ job, onJobClick }) => {
           )}
         </div>
         <div className="text-xs text-gray-500">
-          {onJobClick && <span className="text-blue-500">Click to view →</span>}
+          {onJobClick && job.status === "Completed" && (
+            <span onClick={handleCardClick} className="text-blue-500">
+              Click to view →
+            </span>
+          )}
         </div>
       </div>
     </Card>
