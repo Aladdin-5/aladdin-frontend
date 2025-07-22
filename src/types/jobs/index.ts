@@ -69,6 +69,8 @@ export interface JobDetailResponse {
     jobTitle: string;
     status: "COMPLETED" | "IN_PROGRESS" | "OPEN" | "CANCELLED" | "EXPIRED";
     createdAt: string;
+    assignedAgentId: string;
+    assignedAgentName: string;
   };
   summary: {
     total: number;
@@ -84,6 +86,7 @@ export interface JobDetailResponse {
       agentAddress: string;
       reputation: number;
       successRate: number;
+      pricePerCall: number;
     };
     workStatus: "COMPLETED" | "IN_PROGRESS" | "FAILED" | "ASSIGNED";
     assignedAt: string;

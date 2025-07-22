@@ -196,3 +196,16 @@ export const extractJobsFromResponse = (response: any): JobResponse[] => {
   console.warn("Could not extract jobs from response:", response);
   return [];
 };
+
+export interface FinalChoiceProps {
+  selectedAgent: {
+    id: string;
+    agentName: string;
+    agentAddress: string;
+    reputation: number;
+    successRate: number;
+    pricePerCall: number;
+  };
+  jobId: string;
+  loadJobDetails: Function;
+}

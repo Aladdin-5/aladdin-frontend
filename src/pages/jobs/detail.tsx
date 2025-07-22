@@ -27,6 +27,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 import jobsApi from "@/api/jobsApi";
 import type { JobDetailResponse } from "@/types/jobs/index";
+import FinalChoice from "./components/FinalChoice";
+import { Crown } from "lucide-react";
 
 const { Content } = Layout;
 
@@ -377,6 +379,10 @@ const JobDetailPage: React.FC = () => {
                             Success: {result.agent.successRate}%
                           </div>
                         </div>
+
+                        {result.agent.id === jobDetails.job.assignedAgentId && (
+                          <Crown color="#854d0e" />
+                        )}
                       </div>
                     </div>
                   );
@@ -386,7 +392,19 @@ const JobDetailPage: React.FC = () => {
               {/* 选中的 Agent 详情 */}
               {selectedAgent && (
                 <div className="space-y-6">
-                  <Card size="small" title="Agent Details">
+                  <Card
+                    size="small"
+                    title="Agent Details"
+                    extra={
+                      !jobDetails.job.assignedAgentId && (
+                        <FinalChoice
+                          selectedAgent={selectedAgent.agent}
+                          loadJobDetails={loadJobDetails}
+                          jobId={jobId}
+                        />
+                      )
+                    }
+                  >
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <span className="text-gray-500">Assigned:</span>
