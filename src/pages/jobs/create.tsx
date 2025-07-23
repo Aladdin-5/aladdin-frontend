@@ -124,6 +124,7 @@ const JobCreationForm = () => {
   const {
     data: txHash,
     writeContract,
+    writeContractAsync: asyncWriteContract,
     isPending: isWriting,
     error: writeError,
     reset: resetWrite,
@@ -139,6 +140,8 @@ const JobCreationForm = () => {
       enabled: !!txHash,
     },
   });
+
+  const { data: USDTApproveHash, writeContractAsync } = useWriteContract();
 
   // 交易成功后处理
   useEffect(() => {
@@ -425,11 +428,6 @@ const JobCreationForm = () => {
       };
 
       // 🎯 第一步：调用 API 创建任务
-      message.info("正在创建任务...");
-      const createdJob = await jobsApi.createJob(jobData);
-      message.success("Job created successfully!");
-
-      console.log("Created job:", createdJob);
       console.log("Wallet address used:", getCurrentWalletAddress());
       console.log("Escrow amount:", escrowAmount);
 
@@ -446,8 +444,16 @@ const JobCreationForm = () => {
           setIsJobCreationDeposit(true);
           setAutoDepositAfterApproval(false); // 重置自动存款标记
 
+          // 先授权啊！！！
+          await writeContractAsync({
+            address: contractUsdtAddress as `0x${string}`,
+            abi: ERC20_ABI,
+            functionName: "approve",
+            args: [MY_CONTRACT_ADDRESS, amount],
+          });
+
           // 调用智能合约存款
-          writeContract({
+          await asyncWriteContract({
             address: MY_CONTRACT_ADDRESS,
             abi: MY_CONTRACT_ABI,
             functionName: "depositUSDT",
@@ -458,6 +464,8 @@ const JobCreationForm = () => {
             "info",
             `正在执行资金托管 ${escrowAmount} USDT，请确认钱包交易...`
           );
+
+          await jobsApi.createJob(jobData);
         } catch (escrowError) {
           console.error("资金托管失败:", escrowError);
           message.warning(

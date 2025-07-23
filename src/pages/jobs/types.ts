@@ -205,6 +205,7 @@ export interface FinalChoiceProps {
     reputation: number;
     successRate: number;
     pricePerCall: number;
+    walletAddress: string;
   };
   jobId: string;
   loadJobDetails: Function;

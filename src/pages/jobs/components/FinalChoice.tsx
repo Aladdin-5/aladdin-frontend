@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { message, Popconfirm } from "antd";
 import { Crown } from "lucide-react";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
@@ -11,7 +11,7 @@ const FinalChoice: React.FC<FinalChoiceProps> = (props) => {
   const { selectedAgent, jobId, loadJobDetails } = props;
   const { address } = useAccount();
   // 合约写入
-  const { writeContract } = useWriteContract();
+  const { data: approveHash, writeContract } = useWriteContract();
 
   // 合约读取 - 用户在合约中的余额
   const { data: userContractBalance } = useReadContract({
@@ -25,8 +25,8 @@ const FinalChoice: React.FC<FinalChoiceProps> = (props) => {
   });
 
   // 给选中的agent打钱
-  const handleTradeAgent = async (pricePerCall: string) => {
-    if (!pricePerCall || !address) {
+  const handleTradeAgent = (pricePerCall: string, walletAddress: string) => {
+    if (!pricePerCall || !walletAddress) {
       message.error("请输入有效的提款金额");
       return;
     }
@@ -42,8 +42,8 @@ const FinalChoice: React.FC<FinalChoiceProps> = (props) => {
       writeContract({
         address: MY_CONTRACT_ADDRESS,
         abi: MY_CONTRACT_ABI,
-        functionName: "withdrawUSDT",
-        args: [amount],
+        functionName: "agentUSDT",
+        args: [amount, walletAddress as `0x${string}`],
       });
 
       message.success("交易成功");
@@ -52,12 +52,21 @@ const FinalChoice: React.FC<FinalChoiceProps> = (props) => {
     }
   };
 
-  const handleChoice = async () => {
-    // await handleTradeAgent(String(selectedAgent.pricePerCall));
-    await jobsApi.selectFinalAgent(jobId, selectedAgent.id);
-
-    loadJobDetails(jobId);
+  const handleChoice = () => {
+    handleTradeAgent(
+      String(selectedAgent.pricePerCall),
+      selectedAgent.walletAddress
+    );
   };
+
+  useEffect(() => {
+    if (approveHash) {
+      console.log(approveHash);
+      jobsApi.selectFinalAgent(jobId, selectedAgent.id).then(() => {
+        loadJobDetails(jobId);
+      });
+    }
+  }, [approveHash]);
 
   return (
     <Popconfirm title="确定选择这个agent吗?" onConfirm={handleChoice}>
